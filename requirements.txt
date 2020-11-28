@@ -14,3 +14,5 @@ six==1.15.0
 sympy==1.6.2
 termcolor==1.1.0
 textX==2.3.0
+numpy==1.19.4
+
