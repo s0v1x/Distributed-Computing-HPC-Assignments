@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec  8 19:21:22 2020
+Created on Tue Dec  8 19:20:22 2020
 
 @author: kissami
 """
@@ -33,10 +33,10 @@ def matrixVectorMult(A, b, x):
 ########################initialize matrix A and vector b ######################
 #matrix sizes
 SIZE = 1000
-Local_size = int(SIZE/nbOfproc)
+#Local_size = 
 
 # counts = block of each proc
-counts =[Local_size*SIZE for i in range(nbOfproc)]
+#counts = 
 
 if RANK == 0:
     A = lil_matrix((SIZE, SIZE))
@@ -51,14 +51,12 @@ else :
 
 
 
-#########Send b to procs and scatter A (each proc has its own local matrix#####
-b = COMM.bcast(b, root=0)
-LocalMatrix = np.zeros((Local_size, SIZE))
+#########Send b to all procs and scatter A (each proc has its own local matrix#####
+#LocalMatrix = 
 # Scatter the matrix A
-COMM.Scatterv([A, counts, MPI.DOUBLE], LocalMatrix, root = 0)
 
 #####################Compute A*b locally#######################################
-LocalX = np.zeros(Local_size)
+#LocalX = 
 
 start = MPI.Wtime()
 matrixVectorMult(LocalMatrix, b, LocalX)
@@ -68,19 +66,18 @@ if RANK == 0:
 
 ##################Gather te results ###########################################
 # sendcouns = local size of result
-sendcounts =np.array([Local_size for i in range(nbOfproc)])
-if RANK == 0: 
-    X = np.empty(sum(sendcounts), dtype=np.double)
-else :
-    X = None
+#sendcounts = 
+# if RANK == 0: 
+#     X = ...
+# else :
+#     X = ..
 
 # Gather the result into X
-COMM.Gatherv(LocalX, (X, sendcounts, MPI.DOUBLE), root=0)
+
 
 ##################Print the results ###########################################
 
 if RANK == 0 :
-    
     X_ = A.dot(b)
     print("The result of A*b using dot is :", np.max(X_ - X))
     # print("The result of A*b using parallel version is :", X)
