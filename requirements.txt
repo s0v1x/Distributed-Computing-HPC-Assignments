@@ -12,6 +12,6 @@ pyparsing==2.4.7
 python-dateutil==2.8.1
 scipy==1.5.4
 six==1.15.0
-sympy==1.7
+sympy==1.7.1
 termcolor==1.1.0
 textX==2.3.0
