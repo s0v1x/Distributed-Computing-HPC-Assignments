@@ -2,3 +2,4 @@ dependencies:
   - python=3.8
   - matplotlib
   - pandas
+  - libgfortran=3.0.1
