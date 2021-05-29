@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Dec  8 19:20:22 2020
-
-@author: kissami
-"""
 import numpy as np
 from scipy.sparse import lil_matrix
 from numpy.random import rand, seed
@@ -12,16 +5,15 @@ from numba import njit
 from mpi4py import MPI
 
 
-''' This program compute parallel csc matrix vector multiplication using mpi '''
 
 COMM = MPI.COMM_WORLD
-nbOfproc = COMM.Get_size()
+nbporc = COMM.Get_size()
 RANK = COMM.Get_rank()
 
 seed(42)
 
 def matrixVectorMult(A, b, x):
-    
+
     row, col = A.shape
     for i in range(row):
         a = A[i]
@@ -30,13 +22,12 @@ def matrixVectorMult(A, b, x):
 
     return 0
 
-########################initialize matrix A and vector b ######################
 #matrix sizes
 SIZE = 1000
-#Local_size = 
+localS = int(SIZE/nbporc)
 
 # counts = block of each proc
-#counts = 
+counts =[localS*SIZE for i in range(nbporc)]
 
 if RANK == 0:
     A = lil_matrix((SIZE, SIZE))
@@ -51,34 +42,27 @@ else :
 
 
 
-#########Send b to all procs and scatter A (each proc has its own local matrix#####
-#LocalMatrix = 
+b = COMM.bcast(b, root=0)
+LocalMatrix = np.zeros((localS, SIZE))
 # Scatter the matrix A
+COMM.Scatterv([A, counts, MPI.DOUBLE], LocalMatrix, root = 0)
 
-#####################Compute A*b locally#######################################
-#LocalX = 
+locX = np.zeros(localS)
 
-start = MPI.Wtime()
-matrixVectorMult(LocalMatrix, b, LocalX)
-stop = MPI.Wtime()
-if RANK == 0:
-    print("CPU time of parallel multiplication is ", (stop - start)*1000)
-
-##################Gather te results ###########################################
-# sendcouns = local size of result
-#sendcounts = 
-# if RANK == 0: 
-#     X = ...
-# else :
-#     X = ..
-
-# Gather the result into X
+matrixVectorMult(LocalMatrix, b, locX)
 
 
-##################Print the results ###########################################
+sendcounts =np.array([localS for i in range(nbporc)])
+if RANK == 0: 
+    X = np.empty(sum(sendcounts), dtype=np.double)
+else :
+    X = None
+
+COMM.Gatherv(locX, (X, sendcounts, MPI.DOUBLE), root=0)
+
 
 if RANK == 0 :
-    X_ = A.dot(b)
-    print("The result of A*b using dot is :", np.max(X_ - X))
-    # print("The result of A*b using parallel version is :", X)
-    
+
+    x_tmp = A.dot(b)
+    print("Le result de A*b est :", np.max(x_tmp - X))
+

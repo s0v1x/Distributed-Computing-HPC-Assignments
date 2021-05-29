@@ -1,44 +1,40 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Dec  9 15:09:22 2020
-
-@author: kissami
-"""
-# integration numerique par la methode des rectangles avec alpha = a
-
-import numpy as np
+from mpi4py import MPI
+import numpy as np 
 import matplotlib.pyplot as plt
-
 
 def compute_integrale_rectangle(x, y, nbi):
     
     integrale =0.
     for i in range(nbi):
         integrale = integrale + y[i]*(x[i+1]-x[i])
-        
     return integrale
 
-def plot_integrale(x, y, nbi):
-  
-    for i in range(nbi):
-        # dessin du rectangle
-        x_rect = [x[i], x[i], x[i+1], x[i+1], x[i]] # abscisses des sommets
-        y_rect = [0   , y[i], y[i]  , 0     , 0   ] # ordonnees des sommets
-        plt.plot(x_rect, y_rect,"r")
+comm = MPI.COMM_WORLD
+nb_proc = comm.Get_size()
+rank = comm.Get_rank()
 
 xmin = 0
 xmax = 3*np.pi/2
 nbx = 20
-nbi = nbx - 1 # nombre d'intervalles
 
-x = np.linspace(xmin, xmax, nbx)
-y = np.cos(x)
-plt.plot(x,y,"bo-")
+nbr = int(nbx/nb_proc)
+X = np.linspace(xmin, xmax, nbx)
+if rank == nb_proc-1 :
+    sub_X = X[nbr*rank : ]
+else :
+    sub_X = X[nbr*rank : nbr*(rank+1)+1]
+y = np.cos(sub_X)
 
-integrale = compute_integrale_rectangle(x, y, nbi)
-plot_integrale(x, y, nbi)   
+start = MPI.Wtime()
+result = compute_integrale_rectangle(sub_X, y, len(sub_X)-1)
+end = MPI.Wtime()
 
-print("integrale =", integrale)
+print("Process {rank}".format(rank = rank))
+print("Done in %.8f" % (end-start))
 
-plt.show()
+total = comm.reduce(result, op=MPI.SUM, root=0)
+
+if total is not None:
+    print('---------------------------------------------')
+    print('Integral = ', total)
+print('---------------------------------------------')
